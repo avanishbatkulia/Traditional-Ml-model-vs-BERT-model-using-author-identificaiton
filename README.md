@@ -28,10 +28,10 @@ This project implements and compares traditional NLP techniques with modern tran
    - Rationale: Prevent model from relying on character/location names specific to certain works
 
 3. **Sequence Generation**
-   - Split text into 25-word sequences
+   - Split text into 25-word sequences for traditional and 15-word sequence for modern method
    - Created labeled datasets per author
    - Removed sequences containing identified entities
-   - Rationale: 25-word sequences provide sufficient context while maintaining manageable complexity
+   - Rationale: 25-word and 15-word sequences provide sufficient context while maintaining manageable complexity for respective models
 
 4. **Preprocessing Steps**
    - Text Normalization:
