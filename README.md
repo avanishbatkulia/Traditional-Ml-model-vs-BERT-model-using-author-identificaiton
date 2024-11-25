@@ -13,7 +13,7 @@ The pipeline preprocesses raw texts by cleaning, tokenizing, and removing named 
 
 ## Key Features
 - **Dataset Preparation:**  
-  - Texts are split into 100-word sequences for balanced training and testing.  
+  - Texts are split into 25-word sequences for balanced training and testing.  
   - Named entities (characters, locations) are removed to avoid content-specific bias.  
   - Extensive preprocessing includes normalization, lemmatization, and stopword removal.
 
