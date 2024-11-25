@@ -1,51 +1,165 @@
 # Author Style Analysis: Traditional NLP vs Modern Transformers
 
 ## Overview
-This project explores the effectiveness of **traditional NLP techniques** and **modern transformer-based approaches** in identifying authorship of literary texts. By analyzing works from **Charles Dickens, Jane Austen, and William Shakespeare**, the project investigates how stylistic features can reveal an author's unique writing signature.
 
-The pipeline preprocesses raw texts by cleaning, tokenizing, and removing named entities to focus solely on writing style. Two contrasting methodologies are implemented:
+This project implements and compares traditional NLP techniques with modern transformer-based approaches for author identification. The analysis focuses on identifying authorship based on writing style patterns rather than content-specific markers across works by:
+- Charles Dickens
+- Jane Austen
+- William Shakespeare
 
-1. **Traditional NLP Methods:**  
-   Leveraging models like Naive Bayes, Support Vector Machines (SVM), and Logistic Regression using Bag-of-Words (BoW) representations.
-   
-2. **Modern Transformers:**  
-   Fine-tuning **DistilBERT**, a lightweight BERT-based transformer, for sequence classification to identify authorship with contextual embeddings.
+## Dataset Preparation
 
-## Key Features
-- **Dataset Preparation:**  
-  - Texts are split into 25-word sequences for balanced training and testing.  
-  - Named entities (characters, locations) are removed to avoid content-specific bias.  
-  - Extensive preprocessing includes normalization, lemmatization, and stopword removal.
+### Data Sources
+- Charles Dickens: Gutenberg Corpus
+- Jane Austen: Gutenberg Corpus
+- William Shakespeare: Text file compilation
 
-- **Traditional NLP Approaches:**  
-  - Feature engineering with BoW.  
-  - Implemented Naive Bayes, SVM, and Logistic Regression.  
-  - Achieved **85.16% accuracy** with Naive Bayes.  
+### Processing Pipeline
 
-- **Transformer-Based Approach:**  
-  - Fine-tuned **DistilBERT** with custom classification layers.  
-  - Achieved **92.61% test accuracy** after 16 epochs of training.  
+1. **Initial Cleanup**
+   - Removed prefaces and introductions
+   - Started extraction from Chapter 1
+   - Split texts into training/testing sets per author
 
-- **Performance Comparison:**  
-  - Modern transformers significantly outperformed traditional methods (+7.45% accuracy).  
-  - Traditional models were faster and more interpretable but lacked the nuance of context learning.  
+2. **Entity Removal**
+   - Implemented Named Entity Recognition (NER) to remove:
+     - Location names
+     - Person names
+   - Rationale: Prevent model from relying on character/location names specific to certain works
 
-- **Error Analysis:**  
-  - Traditional methods struggled with stylistically similar authors.  
-  - Transformers excelled at separating subtle patterns in sentence structure and vocabulary.
+3. **Sequence Generation**
+   - Split text into 25-word sequences
+   - Created labeled datasets per author
+   - Removed sequences containing identified entities
+   - Rationale: 25-word sequences provide sufficient context while maintaining manageable complexity
 
-## Key Takeaways
-- **Traditional NLP Models:**  
-  - Efficient for lightweight applications where interpretability and speed are critical.  
-  - Struggle to capture deep contextual nuances of writing.  
+4. **Preprocessing Steps**
+   - Text Normalization:
+     - Lowercase conversion
+     - Special character removal
+     - Whitespace normalization
+   - Pattern Removal:
+     - Numerical digits
+     - URLs and special markers
+     - Non-alphabetic characters
+   - Text Transformation:
+     - Lemmatization using NLTK's WordNetLemmatizer
+     - Stopword removal
+     - Tokenization
+   - Feature Engineering:
+     - Created Bag of Words (BoW) representation
+     - Generated train_bow.csv and test_bow.csv
 
-- **Modern Transformers:**  
-  - Ideal for achieving high accuracy in complex text classification tasks.  
-  - Require significant computational resources and careful fine-tuning to avoid overfitting.  
+5. **Final Dataset**
+   - Combined and shuffled processed sequences
+   - Created train_df.csv and test_df.csv
+   - Dataset sizes:
+     - Training: 10,174 sequences
+     - Testing: 5,709 sequences
 
-## Future Scope
-- Enhance traditional models with advanced feature engineering and ensemble methods.  
-- Optimize transformer training with data augmentation and hyperparameter tuning.  
-- Explore domain adaptation for applying models to other genres or author sets.
+## Model Implementations
 
-This project underscores the trade-off between **simplicity and interpretability** in traditional methods versus the **complexity and accuracy** of modern NLP techniques.
+### Traditional NLP Approach
+
+#### 1. Naive Bayes Multinomial
+- **Performance**: 85.16% accuracy consistent across random states
+- **Class-wise Performance**:
+  - Class 0: Precision: 0.83, Recall: 0.83, F1: 0.83
+  - Class 1: Precision: 0.85, Recall: 0.84, F1: 0.84
+  - Class 2: Precision: 0.88, Recall: 0.89, F1: 0.88
+- **Cross-Validation**:
+  - Scores: [0.938, 0.940, 0.935, 0.933, 0.932]
+  - Average: 0.94
+  - Standard deviation: ≈0.003
+
+#### 2. SVM vs Logistic Regression
+- **SVM Advantages**:
+  - Better non-linear pattern handling
+  - Robust to overfitting
+  - RBF kernel captures complex writing patterns
+- **Logistic Regression**:
+  - Accuracy: 81%
+  - Best Parameters: {'solver': 'saga', 'penalty': 'l2', 'C': 1}
+
+### Modern Approach: Fine-tuned DistilBERT
+
+#### Implementation Architecture
+
+1. **Tokenization**
+```python
+tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+```
+- Uses DistilBERT's built-in tokenizer
+- Maintains contextual information
+- Handles out-of-vocabulary words
+
+2. **Model Architecture**
+```python
+model = DistilBertForSequenceClassification.from_pretrained(
+    'distilbert-base-uncased',
+    num_labels=3
+)
+```
+- Base: DistilBERT (40% smaller, 60% faster than BERT-base)
+- Classification head with 3 output labels
+- Softmax activation with dropout regularization
+
+3. **Training Configuration**
+```python
+training_args = TrainingArguments(
+    learning_rate=2e-5,
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=16,
+    num_train_epochs=16,
+    weight_decay=0.01
+)
+```
+
+#### Performance Results
+- Training Loss: 0.0503
+- Test Accuracy: 92.61%
+- Processing Speed: 114.414 samples/second
+- Training Runtime: 2491.16s
+
+## Comparative Analysis
+
+### Traditional vs Modern Approaches
+
+|Aspect|Traditional (Naive Bayes)|Modern (DistilBERT)|
+|------|------------------------|-------------------|
+|Accuracy|85%|92.61%|
+|Training Time|Minutes|~42 minutes|
+|Resource Needs|CPU sufficient|GPU recommended|
+|Deployment|Simple|Complex|
+
+### Use Case Recommendations
+
+Choose Traditional When:
+- Limited computational resources
+- Need for model interpretability
+- Quick prototyping required
+- Small dataset (<1000 samples)
+
+Choose Modern When:
+- GPU resources available
+- Higher accuracy needed
+- Complex language patterns
+- Larger datasets (>1000 samples)
+
+## Future Improvements
+
+1. **Dataset Enhancement**
+   - Include more authors
+   - Experiment with sequence lengths
+   - Implement advanced data augmentation
+
+2. **Model Optimization**
+   - Explore ensemble methods
+   - Implement feature selection
+   - Test additional algorithms
+
+3. **Analysis Extension**
+   - Add chronological analysis
+   - Implement style transfer
+   - Explore cross-genre performance
+
